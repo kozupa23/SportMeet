@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# commit-msg hook: vynucuje formát zprávy "typ(scope): popis" (Conventional Commits).
+# Aktivace (jednou po naklonování): git config core.hooksPath .githooks
+
+types='feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert'
+
+# První řádek, který není prázdný ani komentář. Při commitu přes editor obsahuje soubor i komentáře.
+subject=$(tr -d '\r' < "$1" | grep -v '^#' | grep -v '^[[:space:]]*$' | head -n 1)
+
+# Prázdnou zprávu odmítne git sám.
+[ -z "$subject" ] && exit 0
+
+# Zprávy generované gitem (merge, revert, autosquash při rebase).
+case "$subject" in
+    "Merge "* | "Revert \""* | "fixup! "* | "squash! "* | "amend! "*) exit 0 ;;
+esac
+
+if printf '%s\n' "$subject" | grep -Eq "^($types)(\([^()[:space:]]+\))?!?: [^[:space:]]"; then
+    exit 0
+fi
+
+cat >&2 <<EOF
+Chyba: zpráva commitu nemá požadovaný formát.
+
+  Zpráva:  $subject
+  Formát:  typ(scope): popis
+           scope je volitelný, ! před dvojtečkou značí breaking change
+
+Povolené typy:
+  feat      nová funkcionalita
+  fix       oprava chyby
+  docs      dokumentace
+  style     formátování kódu bez změny chování
+  refactor  úprava kódu bez změny chování
+  perf      zlepšení výkonu
+  test      testy
+  build     build, Maven, závislosti
+  ci        konfigurace CI
+  chore     ostatní údržba
+  revert    vrácení dřívější změny
+
+Příklady:
+  feat: registrace uživatele
+  fix(auth): oprava expirace tokenu
+EOF
+exit 1
