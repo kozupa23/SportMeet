@@ -138,3 +138,38 @@ git config core.hooksPath .githooks
 Do repozitáře patří zdrojové kódy, `pom.xml`, Maven Wrapper, `.githooks/`, `.run/`, `.editorconfig`, `.gitattributes`, `.gitignore` a README.
 
 Naopak se necommitují `.idea/`, `*.iml`, `target/`, lokální `.env` soubory ani soubory se secrets.
+
+
+## Code review
+
+Větev `main` je chráněná a změny do ní se provádějí pouze přes Pull Request.
+
+Každý Pull Request musí před sloučením schválit alespoň jeden z definovaných Code Owners. Autor Pull Requestu nemůže schválit vlastní změny.
+
+Code Owners jsou definováni v souboru:
+
+```text
+.github/CODEOWNERS
+```
+
+Aktuálně jsou pro celý repozitář nastaveni (prozatím):
+
+```text
+* @kozupa23 @kozuev80
+```
+
+To znamená:
+
+- Pull Request vytvořený `@kozupa23` musí schválit `@kozuev80`.
+- Pull Request vytvořený `@kozuev80` musí schválit `@kozupa23`.
+- Pull Request ostatních členů týmu může schválit kterýkoliv z těchto dvou Code Owners.
+- Přímý push do `main` není povolen.
+- Force push do `main` není povolen.
+- Všechny otevřené review konverzace musí být před mergem vyřešené.
+- Pokud jsou po schválení přidány nové commity, je vyžadováno nové schválení.
+
+Doporučený postup:
+
+```text
+vlastní větev -> commit -> push -> Pull Request -> code review -> merge do main
+```
