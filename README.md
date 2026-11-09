@@ -7,7 +7,7 @@ Backend aplikace SportMeet postavená na Spring Bootu.
 - JDK 25
 - Git
 - IntelliJ IDEA
-- DB TODO
+- PostgreSQL
 
 Samostatnou instalaci Mavenu nepotřebuješ. Projekt obsahuje Maven Wrapper, který používá Maven 3.9.16.
 
@@ -54,21 +54,29 @@ Tyhle kroky uděláš jen jednou. Potřebuješ nainstalovaný [Git](https://git-
 5. Nech IntelliJ dokončit Maven import a stažení dependencies.
 6. Spusť sdílenou konfiguraci **SportMeet**, případně přímo `SportMeetApplication`.
 
-Projekt nyní nevyžaduje databázi ani Docker.
+Pro spuštění aplikace je potřeba PostgreSQL. Výchozí připojení používá databázi
+`sportmeet` na `localhost:5432` a uživatele `sportmeet`. Heslo nastav v
+proměnné prostředí `DB_PASSWORD`; adresu a uživatele lze změnit pomocí
+`DB_URL` a `DB_USERNAME`. Ukázka vytvoření databáze je v `database/init.sql`;
+před jejím použitím změň ukázkové heslo. Pro automatické testy se používá H2.
 
 ## Spuštění bez IntelliJ IDEA
 
 Windows:
 
 ```powershell
-.\mvnw.cmd spring-boot:run
+.\mvnw.cmd clean install
+.\mvnw.cmd -pl sportmeet-app spring-boot:run
 ```
 
 Linux/macOS:
 
 ```bash
-./mvnw spring-boot:run
+./mvnw clean install
+./mvnw -pl sportmeet-app spring-boot:run
 ```
+
+První příkaz sestaví a nainstaluje moduly do lokálního Maven repozitáře.
 
 ## Testy
 
@@ -173,3 +181,10 @@ Doporučený postup:
 ```text
 vlastní větev -> commit -> push -> Pull Request -> code review -> merge do main
 ```
+
+
+## Multi-module Maven
+
+Backend tvori Maven moduly `sportmeet-app` (spustitelna Spring Boot aplikace) a `sportmeet-account` (uzivatelske ucty; implementace prijde v dalsim inkrementu).
+
+Pro IntelliJ: po otevreni projektu znovu nacist Maven projekty a v pripade potreby opravit Spring Boot run konfiguraci tak, aby odkazovala na `sportmeet-app`.
