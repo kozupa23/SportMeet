@@ -23,11 +23,6 @@ import java.util.Optional;
 @Embeddable
 public class DataInfo
 {
-    /**
-     * -- GETTER --
-     *
-     * @return creation time
-     */
     @Getter
     @Column(name = DataInfoSchema.CREATED_AT, nullable = false, updatable = false)
     private OffsetDateTime created;
@@ -35,11 +30,6 @@ public class DataInfo
     @Column(name = DataInfoSchema.CREATED_BY_OBJECT_ID, updatable = false)
     private @Nullable Long createdByObjectId;
 
-    /**
-     * -- GETTER --
-     *
-     * @return creator actor type
-     */
     @Getter
     @Enumerated(EnumType.STRING)
     @Column(name = DataInfoSchema.CREATED_BY_OBJECT_TYPE, nullable = false, updatable = false, length = 32)
@@ -132,33 +122,21 @@ public class DataInfo
                 "A SYSTEM actor cannot have a user identifier");
     }
 
-    /**
-     * @return creator ID, or empty for SYSTEM
-     */
     public Optional<Long> getCreatedByObjectId()
     {
         return Optional.ofNullable(createdByObjectId);
     }
 
-    /**
-     * @return last modification time, if any
-     */
     public Optional<OffsetDateTime> getModified()
     {
         return Optional.ofNullable(modified);
     }
 
-    /**
-     * @return last modifying user ID, if any
-     */
     public Optional<Long> getModifiedByObjectId()
     {
         return Optional.ofNullable(modifiedByObjectId);
     }
 
-    /**
-     * @return last modifying actor type, if any
-     */
     public Optional<DataInfoObjectType> getModifiedByObjectType()
     {
         return Optional.ofNullable(modifiedByObjectType);

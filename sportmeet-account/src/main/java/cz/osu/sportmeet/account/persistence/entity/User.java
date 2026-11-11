@@ -53,15 +53,8 @@ public class User implements MainDatabaseEntity
     @Column(name = UserSchema.EMAIL, nullable = false, length = 254)
     private String email;
 
-    /**
-     * -- GETTER --
-     * Returns a password hash solely for internal authentication services.
-     * Never include it in API DTOs, logs, audit events or history.
-     *
-     */
     @Getter
-    @Column(name = UserSchema.PASSWORD_HASH, nullable = false
-    )
+    @Column(name = UserSchema.PASSWORD_HASH, nullable = false)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
