@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="SportMeet" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <module name="SportMeet" />
+    <module name="sportmeet-app" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="cz.osu.sportmeet.SportMeetApplication" />
     <method v="2">
       <option name="Make" enabled="true" />
