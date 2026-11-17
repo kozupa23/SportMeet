@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.1</version>
+        <version>4.1.2</version>
         <relativePath/>
     </parent>
     <groupId>cz.osu</groupId>
@@ -15,6 +15,14 @@
     <description>SportMeet</description>
     <properties>
         <java.version>25</java.version>
+        <!-- overrides of Spring Boot managed versions because of known vulnerabilities -->
+        <tomcat.version>11.0.29</tomcat.version>
+        <jackson-bom.version>3.1.8</jackson-bom.version>
+        <hibernate-validator.version>9.1.6.Final</hibernate-validator.version>
+        <postgresql.version>42.7.14</postgresql.version>
+        <h2.version>2.5.252</h2.version>
+        <json-smart.version>2.6.1</json-smart.version>
+        <asm.version>9.11.1</asm.version>
     </properties>
     <packaging>pom</packaging>
     <modules>
