@@ -1,0 +1,63 @@
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: sans-serif;
+}
+
+/* Pravá strana upravená pro mřížku dlaždic */
+.dashboard-content-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* Styl samotné dlaždice */
+.tile-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tile-card:hover {
+  border-color: #4b5563;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.tile-card h3 {
+  font-size: 1.25rem;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.tile-card p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.tile-link-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4b5563;
+}
