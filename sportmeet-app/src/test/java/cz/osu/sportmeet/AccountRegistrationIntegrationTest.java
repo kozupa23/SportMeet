@@ -154,10 +154,10 @@ class AccountRegistrationIntegrationTest
      * @throws Exception if request processing fails unexpectedly
      */
     @Test
-    void shouldDenyOtherAccountOperations() throws Exception
+    void shouldRequireAuthenticationForOtherAccountOperations() throws Exception
     {
         mockMvc.perform(get("/api/v1/accounts"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     /**
