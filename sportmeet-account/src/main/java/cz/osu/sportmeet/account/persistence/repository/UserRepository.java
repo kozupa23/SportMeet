@@ -4,6 +4,7 @@ import cz.osu.sportmeet.account.persistence.entity.User;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
 
 /**
  * Provides persistence operations for registered user accounts.
@@ -30,4 +31,12 @@ public interface UserRepository extends JpaRepository<User, Long>
      * @return true if an account with the email exists
      */
     boolean existsByEmail(String email);
+
+    /**
+     * Looks up a registered account using its canonical login.
+     *
+     * @param login normalized login
+     * @return matching account if one exists
+     */
+    Optional<User> findByLogin(String login);
 }

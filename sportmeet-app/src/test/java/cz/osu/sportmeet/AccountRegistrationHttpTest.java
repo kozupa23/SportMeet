@@ -77,7 +77,7 @@ class AccountRegistrationHttpTest
         try (HttpClient client = HttpClient.newHttpClient())
         {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertThat(response.statusCode()).isEqualTo(403);
+            assertThat(response.statusCode()).isEqualTo(401);
         }
     }
 
