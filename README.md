@@ -92,6 +92,22 @@ Linux/macOS:
 ./mvnw test
 ```
 
+Coverage s JaCoCo:
+
+Windows:
+
+```powershell
+.\mvnw.cmd clean verify
+```
+
+Linux/macOS:
+
+```bash
+./mvnw clean verify
+```
+
+HTML reporty se vytvoří v `target/site/jacoco/index.html` každého modulu.
+
 ## Maven
 
 Projekt používá Maven Wrapper (`mvnw`, `mvnw.cmd`). Verze Mavenu je definovaná v:
@@ -185,6 +201,7 @@ vlastní větev -> commit -> push -> Pull Request -> code review -> merge do mai
 
 ## Multi-module Maven
 
-Backend tvori Maven moduly `sportmeet-app` (spustitelna Spring Boot aplikace) a `sportmeet-account` (uzivatelske ucty; implementace prijde v dalsim inkrementu).
+Backend tvoří Maven moduly `sportmeet-app` (spustitelná Spring Boot aplikace),
+`sportmeet-user` (uživatelé a jejich historie) a `sportmeet-common` (sdílené typy).
 
 Pro IntelliJ: po otevreni projektu znovu nacist Maven projekty a v pripade potreby opravit Spring Boot run konfiguraci tak, aby odkazovala na `sportmeet-app`.

@@ -1,8 +1,9 @@
 package cz.osu.sportmeet;
 
-import cz.osu.sportmeet.account.persistence.entity.User;
-import cz.osu.sportmeet.account.persistence.repository.UserRepository;
+import cz.osu.sportmeet.user.persistence.entity.User;
+import cz.osu.sportmeet.user.persistence.repository.UserRepository;
 import jakarta.persistence.EntityManager;
+import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,14 +15,14 @@ import java.time.OffsetDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Verifies repository uniqueness lookups in isolation from the web layer.
- * Case-insensitive identity matching is a business rule enforced by
- * {@code UserValidator} normalization before persistence, not by the database
- * column itself; these tests document and protect that assumption.
+ * Documents that identity lookups are exact and case-sensitive at the database level.
+ * Case-insensitive identity matching is therefore a business rule enforced by
+ * {@code UserValidator} normalization before persistence and lookup.
  *
  * @author Pavel Kozumplik
  * @since 0.1.0
  */
+@NullMarked
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
@@ -33,52 +34,26 @@ class UserRepositoryTest
     @Autowired
     private EntityManager entityManager;
 
-    /**
-     * Verifies that an existing login is reported as present and an unrelated one is not.
-     */
     @Test
-    void existsByLoginReturnsTrueOnlyForStoredValue()
+    void loginLookupIsExactAndCaseSensitive()
     {
         persistUser("runner", "runner@example.com");
 
         assertThat(userRepository.existsByLogin("runner")).isTrue();
+        assertThat(userRepository.findByLogin("runner")).isPresent();
+        assertThat(userRepository.existsByLogin("RUNNER")).isFalse();
+        assertThat(userRepository.findByLogin("RUNNER")).isEmpty();
         assertThat(userRepository.existsByLogin("someoneelse")).isFalse();
     }
 
-    /**
-     * Verifies that an existing email is reported as present and an unrelated one is not.
-     */
     @Test
-    void existsByEmailReturnsTrueOnlyForStoredValue()
+    void emailLookupIsExactAndCaseSensitive()
     {
         persistUser("runner", "runner@example.com");
 
         assertThat(userRepository.existsByEmail("runner@example.com")).isTrue();
-        assertThat(userRepository.existsByEmail("missing@example.com")).isFalse();
-    }
-
-    /**
-     * Documents that login lookups are case-sensitive at the database level, so
-     * callers must normalize identity values before checking or persisting them.
-     */
-    @Test
-    void existsByLoginIsCaseSensitiveAtDatabaseLevel()
-    {
-        persistUser("runner", "runner@example.com");
-
-        assertThat(userRepository.existsByLogin("RUNNER")).isFalse();
-    }
-
-    /**
-     * Documents that email lookups are case-sensitive at the database level, so
-     * callers must normalize identity values before checking or persisting them.
-     */
-    @Test
-    void existsByEmailIsCaseSensitiveAtDatabaseLevel()
-    {
-        persistUser("runner", "runner@example.com");
-
         assertThat(userRepository.existsByEmail("RUNNER@EXAMPLE.COM")).isFalse();
+        assertThat(userRepository.existsByEmail("missing@example.com")).isFalse();
     }
 
     private void persistUser(String login, String email)

@@ -6,7 +6,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Minimal public information about the authenticated session.
  *
- * @param login canonical login of the signed-in account
+ * @param login canonical login of the signed-in user
  *
  * @author Pavel Kozumplik
  * @since 0.1.0
@@ -17,7 +17,7 @@ public record SessionResponse(String login)
     /**
      * Validates the session response.
      *
-     * @param login canonical account login
+     * @param login canonical user login
      */
     public SessionResponse
     {

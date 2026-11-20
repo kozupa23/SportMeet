@@ -36,14 +36,14 @@ public class SecurityConfiguration
     {
         http.authorizeHttpRequests(requests -> requests
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/v1/accounts").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/auth/csrf").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .anyRequest().authenticated());
 
         http.csrf(csrf -> csrf.ignoringRequestMatchers(request ->
                 "POST".equals(request.getMethod())
-                        && (request.getContextPath() + "/api/v1/accounts").equals(request.getRequestURI())));
+                        && (request.getContextPath() + "/api/v1/users").equals(request.getRequestURI())));
 
         http.sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
@@ -61,7 +61,7 @@ public class SecurityConfiguration
                 .logoutUrl("/api/v1/auth/logout")
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
-                .deleteCookies("JSESSIONID")
+                .deleteCookies("SESSION")
                 .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204)));
 
         http.exceptionHandling(exceptions -> exceptions
@@ -74,7 +74,7 @@ public class SecurityConfiguration
     }
 
     /**
-     * Provides an adaptive password encoder for account credentials.
+     * Provides an adaptive password encoder for user credentials.
      *
      * @return BCrypt password encoder
      */

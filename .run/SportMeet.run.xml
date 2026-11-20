@@ -1,5 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="SportMeet" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <envs>
+      </envs>
     <module name="sportmeet-app" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="cz.osu.sportmeet.SportMeetApplication" />
     <method v="2">

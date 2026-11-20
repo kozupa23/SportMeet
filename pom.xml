@@ -23,12 +23,14 @@
         <h2.version>2.5.252</h2.version>
         <json-smart.version>2.6.1</json-smart.version>
         <asm.version>9.11.1</asm.version>
+        <archunit.version>1.5.1</archunit.version>
+        <jacoco.version>0.8.14</jacoco.version>
     </properties>
     <packaging>pom</packaging>
     <modules>
 
         <module>sportmeet-common</module>
-        <module>sportmeet-account</module>
+        <module>sportmeet-user</module>
         <module>sportmeet-app</module>
     </modules>
 
@@ -46,6 +48,26 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

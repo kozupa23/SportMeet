@@ -14,7 +14,8 @@ import java.util.Optional;
 
 /**
  * Embedded creation and last-modification audit metadata.
- * No revision history is stored here; Envers records historical entity versions.
+ * Only the latest modification is kept here; modules that need a full change log
+ * maintain their own history tables (for example {@code T_USER_HISTORY} in the user module).
  *
  * @author Pavel Kozumplik
  * @since 0.1.0
@@ -116,27 +117,44 @@ public class DataInfo
     private static void validateActor(@Nullable Long actorId, DataInfoObjectType actorType)
     {
         Preconditions.checkNotNull(actorType, "actorType must not be null");
-        Preconditions.checkArgument(actorType != DataInfoObjectType.USER || actorId != null,
-                "A USER actor requires an identifier");
-        Preconditions.checkArgument(actorType != DataInfoObjectType.SYSTEM || actorId == null,
-                "A SYSTEM actor cannot have a user identifier");
+        actorType.validateActorId(actorId);
     }
 
+    /**
+     * Returns the identifier of the actor who created the entity.
+     *
+     * @return creator ID, or empty for system actions
+     */
     public Optional<Long> getCreatedByObjectId()
     {
         return Optional.ofNullable(createdByObjectId);
     }
 
+    /**
+     * Returns the timestamp of the most recent modification.
+     *
+     * @return modification timestamp, or empty if never modified
+     */
     public Optional<OffsetDateTime> getModified()
     {
         return Optional.ofNullable(modified);
     }
 
+    /**
+     * Returns the identifier of the actor who last modified the entity.
+     *
+     * @return last modifier ID, or empty if absent
+     */
     public Optional<Long> getModifiedByObjectId()
     {
         return Optional.ofNullable(modifiedByObjectId);
     }
 
+    /**
+     * Returns the category of the actor who last modified the entity.
+     *
+     * @return last modifier category, or empty if never modified
+     */
     public Optional<DataInfoObjectType> getModifiedByObjectType()
     {
         return Optional.ofNullable(modifiedByObjectType);
