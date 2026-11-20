@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="SportMeet (No Build)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+      <envs>
+          <env name="DB_USERNAME" value="postgres"/>
+          <env name="DB_PASSWORD" value="Password*123456789"/>
+          <env name="DB_NAME" value="sportmeet"/>
+      </envs>
+    <module name="sportmeet-app" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="cz.osu.sportmeet.SportMeetApplication" />
+    <method v="2" />
+  </configuration>
+</component>
