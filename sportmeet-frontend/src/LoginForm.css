@@ -104,3 +104,192 @@
 .login-link a:hover {
   text-decoration: underline;
 }
+
+/* Login-page overrides (odpovídající .registration-page) */
+.login-page {
+    color-scheme: light;
+    min-height: 100svh;
+    box-sizing: border-box;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+    background: #f5f8f5;
+    color: #243c30;
+    text-align: left;
+    font-family: var(--sans, system-ui, sans-serif), sans-serif;
+    letter-spacing: normal;
+}
+
+.login-page * {
+    box-sizing: border-box;
+}
+
+.login-page .register-banner {
+    flex: none;
+    width: 100%;
+    max-width: 480px;
+    padding: 0 8px 28px;
+    background: transparent;
+}
+
+.login-page .register-banner h1 {
+    margin: 0 0 10px;
+    color: #236447;
+    font-size: 24px;
+    font-weight: 750;
+    letter-spacing: -0.8px;
+    line-height: 1.2;
+}
+
+.login-page .register-banner p {
+    max-width: 370px;
+    color: #637469;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.login-page .register-form-wrapper {
+    flex: none;
+    width: 100%;
+    padding: 0;
+}
+
+.login-page .register-card {
+    max-width: 480px;
+    padding: 32px;
+    border: 1px solid #e0e8e1;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 8px 32px #23442e08;
+}
+
+.login-page .register-card h2 {
+    margin: 0 0 8px;
+    color: #203c2e;
+    font-size: 27px;
+    font-weight: 650;
+    letter-spacing: -0.8px;
+}
+
+.login-page .subtitle {
+    margin: 0 0 28px;
+    color: #6b786f;
+    font-size: 13px;
+}
+
+.login-page .form-group {
+    margin-bottom: 18px;
+}
+
+.login-page .form-group label {
+    margin-bottom: 7px;
+    color: #344b3e;
+    font-size: 13px;
+    font-weight: 550;
+}
+
+.login-page .form-group input {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 13px;
+    border: 1px solid #dbe3dd;
+    border-radius: 9px;
+    background: #fff;
+    color: #203c2e;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 150ms, box-shadow 150ms;
+}
+
+.login-page input::placeholder {
+    color: #8b978e;
+    opacity: 1;
+}
+
+.login-page .form-group input:focus {
+    outline: none;
+    border-color: #36805a;
+    box-shadow: 0 0 0 3px #36805a18;
+}
+
+.login-page .form-group input[aria-invalid="true"] {
+    border-color: #b42318;
+}
+
+.login-page .submit-btn {
+    min-height: 46px;
+    margin-top: 24px;
+    border-radius: 9px;
+    background: #236447;
+    font-size: 14px;
+    transition: background 150ms;
+}
+
+.login-page .submit-btn:hover {
+    background: #194f36;
+}
+
+.login-page .submit-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.login-page :is(button, a, input[type="checkbox"]):focus-visible {
+    outline: 3px solid #36805a;
+    outline-offset: 3px;
+}
+
+.login-page .login-link {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px solid #edf1ed;
+    color: #6b786f;
+    font-size: 13px;
+}
+
+.login-page .login-link a {
+    margin: 0;
+    color: #236447;
+}
+
+.login-page .field-error, .login-page p[role="alert"] {
+    color: #b42318;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.login-page p[role="alert"]:empty {
+    display: none;
+}
+
+.login-page p[role="alert"]:not(:empty) {
+    margin-bottom: 16px;
+}
+
+/* Styl pro klikací logo/banner vedoucí na hlavní stránku */
+.login-page .register-banner a,
+.register-banner a {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.login-page .register-banner a:hover h1,
+.register-banner a:hover h1 {
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+    .login-page {
+        padding: 28px 16px;
+    }
+
+    .login-page .register-card {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+}

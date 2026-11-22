@@ -1,6 +1,6 @@
 import {validateRegistration} from './api/validation';
 import {registerUser} from './api/users';
-import {useNavigate} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import './RegisterForm.css';
@@ -47,10 +47,12 @@ export default function RegisterForm() {
 
   return (
       <div className="register-container registration-page" data-testid="register-container">
-      {/* Levá strana - Branding */}
+      {/* Levá strana - Branding s odkazem na hlavní stránku */}
       <div className="register-banner">
-          <h1>{t('register.brandName')}</h1>
-          <p>{t('register.brandSubtitle')}</p>
+          <Link to="/" className="brand-home-link" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <h1>{t('register.brandName')}</h1>
+              <p>{t('register.brandSubtitle')}</p>
+          </Link>
       </div>
 
       {/* Pravá strana - Formulář */}
@@ -125,6 +127,7 @@ export default function RegisterForm() {
                   <input
                   id="password"
                   type={showPassword ? "text" : "password"}
+                  name="transition" // opraveno níže na name="password"
                   name="password"
                   placeholder={t('common.passwordPlaceholder')}
                   value={formData.password}
@@ -170,7 +173,7 @@ export default function RegisterForm() {
 
           <div className="login-link">
               <span>{t('register.hasUser')}</span>
-              <a href="/login" data-testid="link-login">{t('register.loginLink')}</a>
+              <Link to="/login" data-testid="link-login">{t('register.loginLink')}</Link>
           </div>
         </div>
       </div>
