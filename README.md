@@ -202,6 +202,7 @@ vlastní větev -> commit -> push -> Pull Request -> code review -> merge do mai
 ## Multi-module Maven
 
 Backend tvoří Maven moduly `sportmeet-app` (spustitelná Spring Boot aplikace),
-`sportmeet-user` (uživatelé a jejich historie) a `sportmeet-common` (sdílené typy).
+`sportmeet-user` (uživatelé a jejich historie), `sportmeet-group` (sportovní skupiny a členství)
+a `sportmeet-common` (sdílené typy).
 
 Pro IntelliJ: po otevreni projektu znovu nacist Maven projekty a v pripade potreby opravit Spring Boot run konfiguraci tak, aby odkazovala na `sportmeet-app`.

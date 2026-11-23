@@ -31,6 +31,7 @@
 
         <module>sportmeet-common</module>
         <module>sportmeet-user</module>
+        <module>sportmeet-group</module>
         <module>sportmeet-app</module>
     </modules>
 
