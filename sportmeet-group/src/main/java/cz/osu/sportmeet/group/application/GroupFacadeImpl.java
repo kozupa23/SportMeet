@@ -3,24 +3,37 @@ package cz.osu.sportmeet.group.application;
 import com.google.common.base.Preconditions;
 import cz.osu.sportmeet.group.application.dto.CreateGroupInput;
 import cz.osu.sportmeet.group.application.dto.CreatedGroup;
-import cz.osu.sportmeet.group.application.exception.InactiveUserException;
+import cz.osu.sportmeet.group.application.dto.GroupDetail;
+import cz.osu.sportmeet.group.application.dto.GroupMember;
+import cz.osu.sportmeet.group.application.exception.GroupNotFoundException;
 import cz.osu.sportmeet.group.application.validation.GroupValidator;
 import cz.osu.sportmeet.group.domain.GroupVisibility;
+import cz.osu.sportmeet.group.domain.MembershipRole;
 import cz.osu.sportmeet.group.persistence.entity.Group;
 import cz.osu.sportmeet.group.persistence.entity.Membership;
 import cz.osu.sportmeet.group.persistence.repository.GroupRepository;
 import cz.osu.sportmeet.group.persistence.repository.MembershipRepository;
 import cz.osu.sportmeet.user.api.lookup.UserLookupFacade;
+import cz.osu.sportmeet.user.api.lookup.UserSummary;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.Collator;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Implements group use cases provided by {@link GroupFacade}.
- * Coordinates the user lookup, validation and persistence of groups and memberships.
+ * Coordinates access checks, validation and persistence of groups and memberships.
  *
  * @author Radek Smiga
  * @since 0.1.0
@@ -29,9 +42,12 @@ import java.time.ZoneOffset;
 @Service
 public class GroupFacadeImpl implements GroupFacade
 {
+    private static final Locale CZECH = Locale.forLanguageTag("cs-CZ");
+
     private final GroupRepository groupRepository;
     private final MembershipRepository membershipRepository;
     private final GroupValidator groupValidator;
+    private final GroupAccess groupAccess;
     private final UserLookupFacade userLookupFacade;
 
     /**
@@ -40,15 +56,17 @@ public class GroupFacadeImpl implements GroupFacade
      * @param groupRepository      repository for groups
      * @param membershipRepository repository for memberships
      * @param groupValidator       validator and normalizer of group data
-     * @param userLookupFacade     user-module contract resolving the signed-in user's identifier
+     * @param groupAccess          resolver of the acting user and their role in a group
+     * @param userLookupFacade     user-module contract providing members' identification
      */
     public GroupFacadeImpl(GroupRepository groupRepository, MembershipRepository membershipRepository,
-                           GroupValidator groupValidator, UserLookupFacade userLookupFacade)
+                           GroupValidator groupValidator, GroupAccess groupAccess, UserLookupFacade userLookupFacade)
     {
         this.groupRepository = Preconditions.checkNotNull(groupRepository, "groupRepository must not be null");
         this.membershipRepository = Preconditions.checkNotNull(
                 membershipRepository, "membershipRepository must not be null");
         this.groupValidator = Preconditions.checkNotNull(groupValidator, "groupValidator must not be null");
+        this.groupAccess = Preconditions.checkNotNull(groupAccess, "groupAccess must not be null");
         this.userLookupFacade = Preconditions.checkNotNull(userLookupFacade, "userLookupFacade must not be null");
     }
 
@@ -62,8 +80,9 @@ public class GroupFacadeImpl implements GroupFacade
         Preconditions.checkNotNull(login, "login must not be null");
         Preconditions.checkNotNull(input, "input must not be null");
 
-        // Who is acting comes first: an inactive user learns nothing about the validity of the data.
-        Long creatorId = userLookupFacade.findActiveUserId(login).orElseThrow(InactiveUserException::new);
+        // Only users with an active account may found groups (AC1). The account is checked before the business
+        // validation below; Bean Validation of the request has already run in the controller.
+        Long creatorId = groupAccess.activeUserId(login);
 
         String name = groupValidator.normalizeName(input.name());
         String description = groupValidator.normalizeDescription(input.description());
@@ -76,5 +95,73 @@ public class GroupFacadeImpl implements GroupFacade
         membershipRepository.save(Membership.owner(group.getId(), creatorId, createdAt));
 
         return new CreatedGroup(group.getId(), group.getName(), group.getDescription(), group.getVisibility());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public GroupDetail getGroup(String login, Long groupId)
+    {
+        Preconditions.checkNotNull(login, "login must not be null");
+        Preconditions.checkNotNull(groupId, "groupId must not be null");
+
+        Long userId = groupAccess.activeUserId(login);
+        // Invalidated groups are not available for regular use (US-04-02 AC9).
+        Group group = groupRepository.findByIdAndValidTrue(groupId).orElseThrow(GroupNotFoundException::new);
+        Optional<MembershipRole> myRole = groupAccess.currentRole(groupId, userId);
+
+        if (myRole.isPresent())
+        {
+            return detail(group, myRole.get(), currentMembers(groupId));
+        }
+
+        // A non-member of a private group gets exactly the same answer as for a missing group,
+        // so the existence of private groups does not leak (US-04-02 AC10).
+        if (group.getVisibility() != GroupVisibility.PUBLIC)
+        {
+            throw new GroupNotFoundException();
+        }
+
+        return detail(group, null, null);
+    }
+
+    /**
+     * Lists current members ordered by role (owner first) and then by name using Czech collation.
+     * All members' identification is loaded in one query instead of one query per member.
+     */
+    private List<GroupMember> currentMembers(Long groupId)
+    {
+        List<Membership> memberships = membershipRepository.findCurrentMembers(groupId);
+        Map<Long, UserSummary> users = userLookupFacade
+                .findUserSummaries(memberships.stream().map(Membership::getUserId).toList())
+                .stream()
+                .collect(Collectors.toMap(UserSummary::id, Function.identity()));
+
+        Collator czech = Collator.getInstance(CZECH);
+
+        return memberships.stream()
+                .map(membership -> member(membership, users))
+                .sorted(Comparator.comparing(GroupMember::role)
+                        .thenComparing(GroupMember::displayName, czech)
+                        .thenComparing(GroupMember::userId))
+                .toList();
+    }
+
+    private static GroupMember member(Membership membership, Map<Long, UserSummary> users)
+    {
+        UserSummary user = users.get(membership.getUserId());
+        // A foreign key guarantees the user exists; a missing one means inconsistent data, not a client error.
+        Preconditions.checkState(user != null, "Member user %s does not exist", membership.getUserId());
+
+        return new GroupMember(user.id(), user.displayName(), membership.getRole());
+    }
+
+    private static GroupDetail detail(Group group, @Nullable MembershipRole myRole,
+                                      @Nullable List<GroupMember> members)
+    {
+        return new GroupDetail(group.getId(), group.getName(), group.getDescription(), group.getVisibility(),
+                myRole, members);
     }
 }

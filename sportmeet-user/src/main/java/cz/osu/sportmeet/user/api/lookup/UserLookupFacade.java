@@ -2,6 +2,8 @@ package cz.osu.sportmeet.user.api.lookup;
 
 import org.jspecify.annotations.NullMarked;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -23,4 +25,14 @@ public interface UserLookupFacade
      * @return user identifier, or empty if the user does not exist or is not active
      */
     Optional<Long> findActiveUserId(String login);
+
+    /**
+     * Returns public identification of the given users in a single query.
+     * Users are returned regardless of their account state (for example blocked) and technical validity,
+     * because their memberships and history still refer to them; unknown identifiers are omitted.
+     *
+     * @param ids user identifiers
+     * @return summaries of the existing users, in no particular order
+     */
+    List<UserSummary> findUserSummaries(Collection<Long> ids);
 }

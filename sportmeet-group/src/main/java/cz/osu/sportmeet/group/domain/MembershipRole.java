@@ -4,6 +4,7 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Role of a member within a sports group, which determines what the member may manage.
+ * Constants are declared from the most to the least privileged role; member lists are ordered this way.
  *
  * @author Radek Smiga
  * @since 0.1.0
