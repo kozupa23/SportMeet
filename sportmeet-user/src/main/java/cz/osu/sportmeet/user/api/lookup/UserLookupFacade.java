@@ -1,0 +1,26 @@
+package cz.osu.sportmeet.user.api.lookup;
+
+import org.jspecify.annotations.NullMarked;
+
+import java.util.Optional;
+
+/**
+ * Public user-module contract that lets other modules identify users without touching
+ * user internals (entities, repositories). The session principal carries only the login,
+ * so modules that store user references (for example group memberships) resolve the ID here.
+ *
+ * @author Radek Smiga
+ * @since 0.1.0
+ */
+@NullMarked
+public interface UserLookupFacade
+{
+    /**
+     * Finds the identifier of a user who may currently act in the application,
+     * i.e. the user exists, is technically valid and is in the {@code ACTIVE} state.
+     *
+     * @param login login of the user; normalization is owned by the user module
+     * @return user identifier, or empty if the user does not exist or is not active
+     */
+    Optional<Long> findActiveUserId(String login);
+}
