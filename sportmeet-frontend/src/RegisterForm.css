@@ -1,0 +1,353 @@
+.register-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #ffffff;
+  font-family: sans-serif;
+}
+
+.register-banner {
+  flex: 1;
+  background-color: #e5e7eb;
+  padding: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.register-banner h1 {
+  font-size: 3rem;
+  color: #111827;
+  margin-bottom: 20px;
+}
+
+.register-banner p {
+  font-size: 1.25rem;
+  color: #4b5563;
+  max-width: 400px;
+  line-height: 1.5;
+}
+
+.register-form-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 40px;
+  background: #ffffff;
+}
+
+.register-card h2 {
+  font-size: 1.75rem;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #4b5563;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.submit-btn:hover {
+  background-color: #374151;
+}
+
+.login-link {
+  margin-top: 24px;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.login-link a {
+  color: #111827;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 200px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.field-error {
+    color: #b42318;
+    display: block;
+    margin-top: 6px;
+}
+
+.form-group input[aria-invalid="true"] {
+    border-color: #b42318;
+}
+
+.password-help {
+    font-size: 0.85rem;
+    color: #555;
+}
+
+/* Registration-only overrides: shared login and dashboard styles stay intact. */
+.registration-page {
+    color-scheme: light;
+    min-height: 100svh;
+    box-sizing: border-box;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 24px;
+    background: #f5f8f5 !important;
+    color: #243c30;
+    text-align: left;
+    font-family: var(--sans, system-ui, sans-serif), sans-serif;
+    letter-spacing: normal;
+}
+
+.registration-page * {
+    box-sizing: border-box;
+}
+
+.registration-page .register-banner {
+    flex: none;
+    width: 100%;
+    max-width: 480px;
+    padding: 0 8px 28px;
+    background: transparent;
+}
+
+.registration-page .register-banner h1 {
+    margin: 0 0 10px;
+    color: #236447;
+    font-size: 24px;
+    font-weight: 750;
+    letter-spacing: -0.8px;
+    line-height: 1.2;
+}
+
+.registration-page .register-banner p {
+    max-width: 370px;
+    color: #637469;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.registration-page .register-form-wrapper {
+    flex: none;
+    width: 100%;
+    padding: 0;
+}
+
+.registration-page .register-card {
+    max-width: 480px;
+    padding: 32px;
+    border: 1px solid #e0e8e1;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 8px 32px #23442e08;
+}
+
+.registration-page .register-card h2 {
+    margin: 0 0 8px;
+    color: #203c2e;
+    font-size: 27px;
+    font-weight: 650;
+    letter-spacing: -0.8px;
+}
+
+.registration-page .subtitle {
+    margin: 0 0 28px;
+    color: #6b786f;
+    font-size: 13px;
+}
+
+.registration-page .form-group {
+    margin-bottom: 18px;
+}
+
+.registration-page .form-group label {
+    margin-bottom: 7px;
+    color: #344b3e;
+    font-size: 13px;
+    font-weight: 550;
+}
+
+.registration-page .form-group input {
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 13px;
+    border: 1px solid #dbe3dd;
+    border-radius: 9px;
+    background: #fff;
+    color: #203c2e;
+    font: inherit;
+    font-size: 14px;
+    transition: border-color 150ms, box-shadow 150ms;
+}
+
+.registration-page input::placeholder {
+    color: #8b978e;
+    opacity: 1;
+}
+
+.registration-page .form-group input:focus {
+    outline: none;
+    border-color: #36805a;
+    box-shadow: 0 0 0 3px #36805a18;
+}
+
+.registration-page .form-group input[aria-invalid="true"] {
+    border-color: #b42318;
+}
+
+.registration-page .form-row {
+    gap: 14px;
+}
+
+.registration-page .password-help {
+    margin: 0 0 12px;
+    color: #6b786f;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.registration-page form > label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #526459;
+    cursor: pointer;
+}
+
+.registration-page input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #236447;
+}
+
+.registration-page .submit-btn {
+    min-height: 46px;
+    margin-top: 24px;
+    border-radius: 9px;
+    background: #236447;
+    font-size: 14px;
+    transition: background 150ms;
+}
+
+.registration-page .submit-btn:hover {
+    background: #194f36;
+}
+
+.registration-page .submit-btn:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+
+.registration-page :is(button, a, input[type="checkbox"]):focus-visible {
+    outline: 3px solid #36805a;
+    outline-offset: 3px;
+}
+
+.registration-page .login-link {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 24px;
+    padding-top: 22px;
+    border-top: 1px solid #edf1ed;
+    color: #6b786f;
+    font-size: 13px;
+}
+
+.registration-page .login-link a {
+    margin: 0;
+    color: #236447;
+}
+
+.registration-page .field-error, .registration-page p[role="alert"] {
+    color: #b42318;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.registration-page p[role="alert"]:empty {
+    display: none;
+}
+
+.registration-page p[role="alert"]:not(:empty) {
+    margin-bottom: 16px;
+}
+
+/* Styl pro klikací logo/banner vedoucí na hlavní stránku */
+.registration-page .register-banner a,
+.register-banner a {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.registration-page .register-banner a:hover h1,
+.register-banner a:hover h1 {
+  opacity: 0.85;
+}
+
+@media (max-width: 480px) {
+    .registration-page {
+        padding: 28px 16px;
+    }
+
+    .registration-page .register-card {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+
+    .registration-page .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+}
