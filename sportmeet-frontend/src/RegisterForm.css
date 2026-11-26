@@ -139,7 +139,7 @@
     flex-direction: column;
     align-items: center;
     padding: 48px 24px;
-    background: #f5f8f5;
+    background: #f5f8f5 !important;
     color: #243c30;
     text-align: left;
     font-family: var(--sans, system-ui, sans-serif), sans-serif;
@@ -321,6 +321,19 @@
 
 .registration-page p[role="alert"]:not(:empty) {
     margin-bottom: 16px;
+}
+
+/* Styl pro klikací logo/banner vedoucí na hlavní stránku */
+.registration-page .register-banner a,
+.register-banner a {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.registration-page .register-banner a:hover h1,
+.register-banner a:hover h1 {
+  opacity: 0.85;
 }
 
 @media (max-width: 480px) {

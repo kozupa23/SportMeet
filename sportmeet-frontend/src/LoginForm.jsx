@@ -37,11 +37,13 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="register-container" data-testid="login-container">
-      {/* Levá strana - Branding (shodný s RegisterForm) */}
+    <div className="register-container login-page" data-testid="login-container">
+      {/* Levá strana - Branding s odkazem na hlavní stránku */}
       <div className="register-banner">
-        <h1>{t('register.brandName')}</h1>
-        <p>{t('login.brandSubtitle')}</p>
+        <Link to="/" className="brand-home-link" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <h1>{t('register.brandName')}</h1>
+          <p>{t('login.brandSubtitle')}</p>
+        </Link>
       </div>
 
       {/* Pravá strana - Přihlašovací formulář */}
