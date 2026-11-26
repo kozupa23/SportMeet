@@ -176,6 +176,36 @@ class GroupPersistenceTest
     }
 
     /**
+     * Verifies that the history table itself enforces its rules: a USER actor has an identifier, a SYSTEM actor
+     * has none, only known attributes are stored, and exactly membership changes identify the affected member.
+     */
+    @Test
+    void historyTableEnforcesActorAttributeAndMemberRules()
+    {
+        Long founderId = founder("historychecks");
+        Long groupId = groupRepository.saveAndFlush(Group.create("Šachy", null,
+                GroupVisibility.PRIVATE, founderId, CREATED_AT)).getId();
+        String insert = "INSERT INTO T_GROUP_HISTORY (GROUP_ID, MEMBER_USER_ID, ATTRIBUTE_NAME, OLD_VALUE, NEW_VALUE, "
+                + "CHANGED_BY, CHANGED_BY_TYPE, CHANGED_AT) VALUES (?, ?, ?, 'old', 'new', ?, ?, CURRENT_TIMESTAMP)";
+
+        assertThat(jdbcTemplate.update(insert, groupId, null, "NAME", founderId, "USER")).isEqualTo(1);
+        assertThat(jdbcTemplate.update(insert, groupId, null, "VALID", null, "SYSTEM")).isEqualTo(1);
+        assertThat(jdbcTemplate.update(insert, groupId, founderId, "MEMBERSHIP_ROLE", founderId, "USER"))
+                .isEqualTo(1);
+
+        assertThatThrownBy(() -> jdbcTemplate.update(insert, groupId, null, "NAME", null, "USER"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update(insert, groupId, null, "NAME", founderId, "SYSTEM"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update(insert, groupId, null, "OWNER_ID", founderId, "USER"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update(insert, groupId, null, "MEMBERSHIP_STATUS", founderId, "USER"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> jdbcTemplate.update(insert, groupId, founderId, "NAME", founderId, "USER"))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    /**
      * Persists a user that can be referenced by groups and memberships.
      */
     private Long founder(String login)

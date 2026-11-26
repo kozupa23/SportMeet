@@ -1,8 +1,11 @@
 package cz.osu.sportmeet.group.application;
 
 import com.google.common.base.Preconditions;
+import cz.osu.sportmeet.group.application.exception.GroupNotFoundException;
 import cz.osu.sportmeet.group.application.exception.InactiveUserException;
+import cz.osu.sportmeet.group.domain.GroupVisibility;
 import cz.osu.sportmeet.group.domain.MembershipRole;
+import cz.osu.sportmeet.group.persistence.entity.Group;
 import cz.osu.sportmeet.group.persistence.entity.Membership;
 import cz.osu.sportmeet.group.persistence.repository.MembershipRepository;
 import cz.osu.sportmeet.user.api.lookup.UserLookupFacade;
@@ -12,9 +15,9 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /**
- * Answers the two questions every group operation starts with: who is acting,
- * and which role does that user currently have in the group.
- * Decisions about what a role may do stay in the individual use cases.
+ * Answers the questions every group operation starts with: who is acting, which role that user currently
+ * has in the group, and whether the user may see the group at all.
+ * What a particular role may do (for example only the owner may change the group) is decided by the use cases.
  *
  * @author Radek Smiga
  * @since 0.1.0
@@ -66,5 +69,28 @@ public class GroupAccess
         Preconditions.checkNotNull(userId, "userId must not be null");
 
         return membershipRepository.findCurrentMembership(groupId, userId).map(Membership::getRole);
+    }
+
+    /**
+     * Returns the user's current role in a valid group, or empty for a non-member who may still see the group
+     * because it is public. A non-member of a private group gets exactly the same answer as for a missing group,
+     * so the existence of private groups does not leak (US-04-02 AC10).
+     *
+     * @param group  valid group
+     * @param userId user identifier
+     * @return current role, or empty for a non-member of a public group
+     * @throws GroupNotFoundException if the user may not see the group at all
+     */
+    public Optional<MembershipRole> visibleRole(Group group, Long userId)
+    {
+        Preconditions.checkNotNull(group, "group must not be null");
+
+        Optional<MembershipRole> role = currentRole(group.getId(), userId);
+        if (role.isEmpty() && group.getVisibility() != GroupVisibility.PUBLIC)
+        {
+            throw new GroupNotFoundException();
+        }
+
+        return role;
     }
 }

@@ -6,12 +6,17 @@ import cz.osu.sportmeet.group.application.dto.CreateGroupInput;
 import cz.osu.sportmeet.group.application.dto.CreatedGroup;
 import cz.osu.sportmeet.group.application.dto.GroupDetail;
 import cz.osu.sportmeet.group.application.dto.GroupMember;
+import cz.osu.sportmeet.group.application.dto.UpdateGroupInput;
+import cz.osu.sportmeet.group.application.exception.ConcurrentGroupModificationException;
+import cz.osu.sportmeet.group.application.exception.GroupAccessDeniedException;
 import cz.osu.sportmeet.group.application.exception.GroupNotFoundException;
 import cz.osu.sportmeet.group.application.exception.InactiveUserException;
 import cz.osu.sportmeet.group.application.validation.GroupValidator;
+import cz.osu.sportmeet.group.domain.GroupHistoryAttribute;
 import cz.osu.sportmeet.group.domain.GroupVisibility;
 import cz.osu.sportmeet.group.domain.MembershipRole;
 import cz.osu.sportmeet.group.domain.MembershipStatus;
+import cz.osu.sportmeet.group.domain.event.GroupAttributeChanged;
 import cz.osu.sportmeet.group.persistence.entity.Group;
 import cz.osu.sportmeet.group.persistence.entity.Membership;
 import cz.osu.sportmeet.group.persistence.repository.GroupRepository;
@@ -23,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
@@ -32,6 +38,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.inOrder;
@@ -268,11 +275,170 @@ class GroupFacadeImplTest
         verifyNoInteractions(groups, memberships);
     }
 
-    private void validGroup(GroupVisibility visibility)
+    // ---------------------------------------------------------------- changing a group (US-04-03)
+
+    /**
+     * AC1, AC2, AC5, AC7: the owner changes all attributes; the group is saved with one event per change
+     * (the events become history entries) and the updated detail is returned.
+     */
+    @Test
+    void ownerChangesAttributesAndChangesAreRecorded()
+    {
+        Group group = validGroup(GroupVisibility.PRIVATE);
+        actingUserHasRole(MembershipRole.OWNER);
+
+        GroupDetail detail = facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("  Florbal Poruba ", "", GroupVisibility.PUBLIC, 0L));
+
+        assertThat(detail.name()).isEqualTo("Florbal Poruba");
+        assertThat(detail.description()).isNull();
+        assertThat(detail.visibility()).isEqualTo(GroupVisibility.PUBLIC);
+        assertThat(detail.myRole()).isEqualTo(MembershipRole.OWNER);
+        verify(groups).saveAndFlush(group);
+        assertThat(group.getDomainEvents())
+                .extracting(GroupAttributeChanged::attribute, GroupAttributeChanged::oldValue,
+                        GroupAttributeChanged::newValue, GroupAttributeChanged::changedBy)
+                .containsExactly(
+                        tuple(GroupHistoryAttribute.NAME, "Florbal Ostrava", "Florbal Poruba", USER_ID),
+                        tuple(GroupHistoryAttribute.DESCRIPTION, "Weekly training", null, USER_ID),
+                        tuple(GroupHistoryAttribute.VISIBILITY, "PRIVATE", "PUBLIC", USER_ID));
+        assertThat(group.getDataInfo().getModifiedByObjectId()).contains(USER_ID);
+    }
+
+    @Test
+    void omittedAttributesStayAndSameValuesSaveNothing()
+    {
+        Group group = validGroup(GroupVisibility.PRIVATE);
+        actingUserHasRole(MembershipRole.OWNER);
+
+        GroupDetail detail = facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("Florbal Ostrava", null, null, 0L));
+
+        assertThat(detail.description()).isEqualTo("Weekly training");
+        assertThat(group.getDomainEvents()).isEmpty();
+        verify(groups, never()).saveAndFlush(any());
+    }
+
+    /**
+     * AC4: only the primary owner may change the group (decision for UC-04 open question Q2).
+     */
+    @Test
+    void onlyOwnerMayChangeGroup()
+    {
+        for (MembershipRole role : new MembershipRole[]{MembershipRole.SECONDARY_OWNER, MembershipRole.MEMBER})
+        {
+            Group group = validGroup(GroupVisibility.PRIVATE);
+            actingUserHasRole(role);
+
+            assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                    new UpdateGroupInput("Renamed", null, null, 0L)))
+                    .as("role %s", role)
+                    .isInstanceOf(GroupAccessDeniedException.class);
+            assertThat(group.getName()).isEqualTo("Florbal Ostrava");
+        }
+        verify(groups, never()).saveAndFlush(any());
+    }
+
+    /**
+     * A non-member who can see a public group is told they lack permission; a private group stays hidden.
+     */
+    @Test
+    void nonMemberIsDeniedOrDoesNotSeeTheGroup()
+    {
+        validGroup(GroupVisibility.PUBLIC);
+        when(memberships.findCurrentMembership(GROUP_ID, USER_ID)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("Renamed", null, null, 0L))).isInstanceOf(GroupAccessDeniedException.class);
+
+        validGroup(GroupVisibility.PRIVATE);
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("Renamed", null, null, 0L))).isInstanceOf(GroupNotFoundException.class);
+
+        verify(groups, never()).saveAndFlush(any());
+    }
+
+    /**
+     * AC8, AC9: a change based on an outdated version must not overwrite newer data.
+     */
+    @Test
+    void changeBasedOnOutdatedVersionIsRejectedWithoutChanges()
+    {
+        Group group = validGroup(GroupVisibility.PRIVATE);
+        actingUserHasRole(MembershipRole.OWNER);
+
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("Renamed", null, null, 5L)))
+                .isInstanceOf(ConcurrentGroupModificationException.class);
+
+        assertThat(group.getName()).isEqualTo("Florbal Ostrava");
+        assertThat(group.getDomainEvents()).isEmpty();
+        verify(groups, never()).saveAndFlush(any());
+    }
+
+    /**
+     * AC8, AC9: a concurrent change of the same row detected by the database is also reported as a conflict.
+     */
+    @Test
+    void concurrentChangeDetectedOnFlushIsReportedAsConflict()
+    {
+        validGroup(GroupVisibility.PRIVATE);
+        actingUserHasRole(MembershipRole.OWNER);
+        when(groups.saveAndFlush(any(Group.class)))
+                .thenThrow(new ObjectOptimisticLockingFailureException(Group.class, GROUP_ID));
+
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("Renamed", null, null, 0L)))
+                .isInstanceOf(ConcurrentGroupModificationException.class);
+    }
+
+    /**
+     * AC3: an empty request and invalid values are rejected before anything changes.
+     */
+    @Test
+    void emptyOrInvalidChangeIsRejected()
+    {
+        Group group = validGroup(GroupVisibility.PRIVATE);
+        actingUserHasRole(MembershipRole.OWNER);
+
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput(null, null, null, 0L))).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput("   ", null, null, 0L))).isInstanceOf(InvalidInputException.class);
+        assertThatThrownBy(() -> facade.updateGroup("runner", GROUP_ID,
+                new UpdateGroupInput(null, "Null\u0000Byte", null, 0L))).isInstanceOf(InvalidInputException.class);
+
+        assertThat(group.getDomainEvents()).isEmpty();
+        verify(groups, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void inactiveUserCannotChangeGroup()
+    {
+        when(userLookup.findActiveUserId("blocked")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> facade.updateGroup("blocked", GROUP_ID,
+                new UpdateGroupInput("Renamed", null, null, 0L))).isInstanceOf(InactiveUserException.class);
+        verifyNoInteractions(groups, memberships);
+    }
+
+    private void actingUserHasRole(MembershipRole role)
+    {
+        when(memberships.findCurrentMembership(GROUP_ID, USER_ID)).thenReturn(Optional.of(membership(USER_ID, role)));
+        when(memberships.findCurrentMembers(GROUP_ID)).thenReturn(List.of(membership(USER_ID, role)));
+        when(userLookup.findUserSummaries(anyCollection())).thenReturn(List.of(new UserSummary(USER_ID, "Ivan")));
+    }
+
+    /**
+     * Stubs a valid, persisted group (version 0) founded by another user.
+     */
+    private Group validGroup(GroupVisibility visibility)
     {
         Group group = Group.create("Florbal Ostrava", "Weekly training", visibility, 30L, CREATED_AT);
         ReflectionTestUtils.setField(group, "id", GROUP_ID);
+        ReflectionTestUtils.setField(group, "version", 0L);
         when(groups.findByIdAndValidTrue(GROUP_ID)).thenReturn(Optional.of(group));
+
+        return group;
     }
 
     /**

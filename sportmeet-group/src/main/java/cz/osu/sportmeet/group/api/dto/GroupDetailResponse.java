@@ -14,6 +14,7 @@ import java.util.List;
  * @param name        group name
  * @param description description, or null
  * @param visibility  group visibility
+ * @param version     current version; send it back when changing the group
  * @param myRole      requesting user's role in the group, or null for a non-member;
  *                    meant for the UI only, every operation is authorized on the server again
  * @param members     current members ordered by role, or null when the user is not a member
@@ -23,6 +24,7 @@ import java.util.List;
  */
 @NullMarked
 public record GroupDetailResponse(Long id, String name, @Nullable String description, GroupVisibility visibility,
-                                  @Nullable MembershipRole myRole, @Nullable List<MemberResponse> members)
+                                  Long version, @Nullable MembershipRole myRole,
+                                  @Nullable List<MemberResponse> members)
 {
 }

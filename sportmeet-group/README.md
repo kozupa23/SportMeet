@@ -6,6 +6,9 @@ Veřejné endpointy jsou pod `/api/v1/groups` a vyžadují přihlášení:
 - `POST /api/v1/groups` – založení skupiny (navíc CSRF token),
 - `GET /api/v1/groups/{id}` – detail skupiny; aktuální členové vidí i seznam členů, nečlen jen základní údaje
   veřejné skupiny. Soukromá, zneplatněná i neexistující skupina vrací stejné 404.
+- `PATCH /api/v1/groups/{id}` – změna názvu, popisu a viditelnosti; smí jen `OWNER` (navíc CSRF token).
+  Tělo musí obsahovat `version` z detailu; pokud se skupina mezitím změnila, vrací 409.
+  Každá změna se zapíše do `T_GROUP_HISTORY` ve stejné transakci.
 
 Identitu přihlášeného uživatele získává výhradně přes veřejný kontrakt modulu `user`
 (`cz.osu.sportmeet.user.api.lookup.UserLookupFacade`); do interních balíčků modulu `user` nesahá.

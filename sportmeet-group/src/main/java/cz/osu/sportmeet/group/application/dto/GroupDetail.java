@@ -15,6 +15,7 @@ import java.util.List;
  * @param name        group name
  * @param description description, or null
  * @param visibility  group visibility
+ * @param version     current version; a change must be based on it (optimistic locking)
  * @param myRole      requesting user's current role, or null for a non-member
  * @param members     current members, or null when the user may not see them (non-member)
  *
@@ -23,7 +24,7 @@ import java.util.List;
  */
 @NullMarked
 public record GroupDetail(Long id, String name, @Nullable String description, GroupVisibility visibility,
-                          @Nullable MembershipRole myRole, @Nullable List<GroupMember> members)
+                          Long version, @Nullable MembershipRole myRole, @Nullable List<GroupMember> members)
 {
     /**
      * Validates required values and makes the member list immutable.
@@ -32,6 +33,7 @@ public record GroupDetail(Long id, String name, @Nullable String description, Gr
      * @param name        group name
      * @param description description, or null
      * @param visibility  group visibility
+     * @param version     current version
      * @param myRole      requesting user's role, or null
      * @param members     current members, or null
      */
@@ -40,6 +42,7 @@ public record GroupDetail(Long id, String name, @Nullable String description, Gr
         Preconditions.checkNotNull(id, "id must not be null");
         Preconditions.checkNotNull(name, "name must not be null");
         Preconditions.checkNotNull(visibility, "visibility must not be null");
+        Preconditions.checkNotNull(version, "version must not be null");
         members = members == null ? null : List.copyOf(members);
     }
 }

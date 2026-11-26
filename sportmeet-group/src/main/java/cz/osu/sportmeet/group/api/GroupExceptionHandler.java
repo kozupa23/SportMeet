@@ -1,6 +1,8 @@
 package cz.osu.sportmeet.group.api;
 
 import cz.osu.sportmeet.common.application.InvalidInputException;
+import cz.osu.sportmeet.group.application.exception.ConcurrentGroupModificationException;
+import cz.osu.sportmeet.group.application.exception.GroupAccessDeniedException;
 import cz.osu.sportmeet.group.application.exception.GroupNotFoundException;
 import cz.osu.sportmeet.group.application.exception.InactiveUserException;
 import org.jspecify.annotations.NullMarked;
@@ -34,6 +36,30 @@ public final class GroupExceptionHandler
     public ResponseEntity<ProblemDetail> inactiveUser(InactiveUserException exception)
     {
         return problem(HttpStatus.FORBIDDEN, "User account not active", exception.getMessage());
+    }
+
+    /**
+     * Rejects an operation by a user who may see the group but lacks the required role.
+     *
+     * @param exception missing permission
+     * @return HTTP 403 Problem Details response
+     */
+    @ExceptionHandler(GroupAccessDeniedException.class)
+    public ResponseEntity<ProblemDetail> accessDenied(GroupAccessDeniedException exception)
+    {
+        return problem(HttpStatus.FORBIDDEN, "Operation not allowed", exception.getMessage());
+    }
+
+    /**
+     * Reports a change based on an outdated version of the group, or a concurrent change.
+     *
+     * @param exception optimistic locking failure
+     * @return HTTP 409 Problem Details response
+     */
+    @ExceptionHandler(ConcurrentGroupModificationException.class)
+    public ResponseEntity<ProblemDetail> concurrentModification(ConcurrentGroupModificationException exception)
+    {
+        return problem(HttpStatus.CONFLICT, "Group modified concurrently", exception.getMessage());
     }
 
     /**

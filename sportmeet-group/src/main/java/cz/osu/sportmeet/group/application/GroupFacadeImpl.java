@@ -1,10 +1,15 @@
 package cz.osu.sportmeet.group.application;
 
 import com.google.common.base.Preconditions;
+import cz.osu.sportmeet.common.application.InvalidInputException;
+import cz.osu.sportmeet.common.persistence.DataInfoObjectType;
 import cz.osu.sportmeet.group.application.dto.CreateGroupInput;
 import cz.osu.sportmeet.group.application.dto.CreatedGroup;
 import cz.osu.sportmeet.group.application.dto.GroupDetail;
 import cz.osu.sportmeet.group.application.dto.GroupMember;
+import cz.osu.sportmeet.group.application.dto.UpdateGroupInput;
+import cz.osu.sportmeet.group.application.exception.ConcurrentGroupModificationException;
+import cz.osu.sportmeet.group.application.exception.GroupAccessDeniedException;
 import cz.osu.sportmeet.group.application.exception.GroupNotFoundException;
 import cz.osu.sportmeet.group.application.validation.GroupValidator;
 import cz.osu.sportmeet.group.domain.GroupVisibility;
@@ -17,6 +22,7 @@ import cz.osu.sportmeet.user.api.lookup.UserLookupFacade;
 import cz.osu.sportmeet.user.api.lookup.UserSummary;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +40,7 @@ import java.util.stream.Collectors;
 /**
  * Implements group use cases provided by {@link GroupFacade}.
  * Coordinates access checks, validation and persistence of groups and memberships.
+ * Group history is written by {@link GroupHistoryRecorder} from domain events published when a group is saved.
  *
  * @author Radek Smiga
  * @since 0.1.0
@@ -110,21 +117,86 @@ public class GroupFacadeImpl implements GroupFacade
         Long userId = groupAccess.activeUserId(login);
         // Invalidated groups are not available for regular use (US-04-02 AC9).
         Group group = groupRepository.findByIdAndValidTrue(groupId).orElseThrow(GroupNotFoundException::new);
-        Optional<MembershipRole> myRole = groupAccess.currentRole(groupId, userId);
+        Optional<MembershipRole> myRole = groupAccess.visibleRole(group, userId);
 
-        if (myRole.isPresent())
+        // Only current members see the member list; a non-member sees basic data of a public group.
+        return myRole.map(role -> detail(group, role, currentMembers(groupId)))
+                .orElseGet(() -> detail(group, null, null));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public GroupDetail updateGroup(String login, Long groupId, UpdateGroupInput input)
+    {
+        Preconditions.checkNotNull(login, "login must not be null");
+        Preconditions.checkNotNull(groupId, "groupId must not be null");
+        Preconditions.checkNotNull(input, "input must not be null");
+
+        Long userId = groupAccess.activeUserId(login);
+        Group group = groupRepository.findByIdAndValidTrue(groupId).orElseThrow(GroupNotFoundException::new);
+        // Users who may not see the group get 404 from visibleRole; those who see it but are not the owner get 403.
+        MembershipRole role = groupAccess.visibleRole(group, userId).orElseThrow(GroupAccessDeniedException::new);
+        if (role != MembershipRole.OWNER)
         {
-            return detail(group, myRole.get(), currentMembers(groupId));
+            throw new GroupAccessDeniedException();
         }
 
-        // A non-member of a private group gets exactly the same answer as for a missing group,
-        // so the existence of private groups does not leak (US-04-02 AC10).
-        if (group.getVisibility() != GroupVisibility.PUBLIC)
+        InvalidInputException.check(
+                input.name() != null || input.description() != null || input.visibility() != null,
+                "At least one group attribute must be provided.");
+        @Nullable String name = input.name() == null ? null : groupValidator.normalizeName(input.name());
+        boolean descriptionProvided = input.description() != null;
+        // A provided description replaces the current one; a blank one removes it (normalizes to null).
+        @Nullable String description = descriptionProvided
+                ? groupValidator.normalizeDescription(input.description())
+                : null;
+
+        // The change must be based on the current version, otherwise a newer change made after the client
+        // read the group would be silently overwritten (US-04-03 AC8, AC9).
+        if (!input.version().equals(group.getVersion()))
         {
-            throw new GroupNotFoundException();
+            throw new ConcurrentGroupModificationException();
         }
 
-        return detail(group, null, null);
+        OffsetDateTime changedAt = OffsetDateTime.now(ZoneOffset.UTC);
+        boolean changed = false;
+        if (name != null)
+        {
+            changed |= group.changeName(name, changedAt, userId, DataInfoObjectType.USER);
+        }
+        if (descriptionProvided)
+        {
+            changed |= group.changeDescription(description, changedAt, userId, DataInfoObjectType.USER);
+        }
+        if (input.visibility() != null)
+        {
+            changed |= group.changeVisibility(input.visibility(), changedAt, userId, DataInfoObjectType.USER);
+        }
+
+        if (changed)
+        {
+            saveAndDetectConflicts(group);
+        }
+
+        return detail(group, role, currentMembers(groupId));
+    }
+
+    /**
+     * Saves the group, which publishes its domain events and so records history, and flushes so that
+     * a concurrent change of the same row (detected by {@code @Version}) surfaces inside this method.
+     */
+    private void saveAndDetectConflicts(Group group)
+    {
+        try
+        {
+            groupRepository.saveAndFlush(group);
+        } catch (OptimisticLockingFailureException exception)
+        {
+            throw new ConcurrentGroupModificationException(exception);
+        }
     }
 
     /**
@@ -161,7 +233,9 @@ public class GroupFacadeImpl implements GroupFacade
     private static GroupDetail detail(Group group, @Nullable MembershipRole myRole,
                                       @Nullable List<GroupMember> members)
     {
+        Long version = Preconditions.checkNotNull(group.getVersion(), "A persisted group must have a version");
+
         return new GroupDetail(group.getId(), group.getName(), group.getDescription(), group.getVisibility(),
-                myRole, members);
+                version, myRole, members);
     }
 }
