@@ -1,6 +1,7 @@
 package cz.osu.sportmeet.group.api;
 
 import cz.osu.sportmeet.common.application.InvalidInputException;
+import cz.osu.sportmeet.group.application.exception.GroupNotFoundException;
 import cz.osu.sportmeet.group.application.exception.InactiveUserException;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Maps group operation failures to stable REST Problem Details responses.
@@ -35,6 +37,18 @@ public final class GroupExceptionHandler
     }
 
     /**
+     * Reports a missing, invalidated or hidden group; the cases are indistinguishable on purpose.
+     *
+     * @param exception group lookup failure
+     * @return HTTP 404 Problem Details response
+     */
+    @ExceptionHandler(GroupNotFoundException.class)
+    public ResponseEntity<ProblemDetail> groupNotFound(GroupNotFoundException exception)
+    {
+        return problem(HttpStatus.NOT_FOUND, "Group not found", exception.getMessage());
+    }
+
+    /**
      * Returns the violated business rule; messages of {@link InvalidInputException} never contain submitted values.
      *
      * @param exception invalid group data
@@ -47,7 +61,8 @@ public final class GroupExceptionHandler
     }
 
     /**
-     * Rejects missing fields, malformed JSON and unknown enum values without echoing submitted values.
+     * Rejects missing fields, malformed JSON, unknown properties and unknown enum values
+     * without echoing submitted values.
      *
      * @return HTTP 400 Problem Details response
      */
@@ -55,6 +70,17 @@ public final class GroupExceptionHandler
     public ResponseEntity<ProblemDetail> invalidRequest()
     {
         return problem(HttpStatus.BAD_REQUEST, "Invalid group data", "Group data failed validation.");
+    }
+
+    /**
+     * Rejects a group identifier in the URL that is not a number, for example {@code /api/v1/groups/abc}.
+     *
+     * @return HTTP 400 Problem Details response
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ProblemDetail> invalidIdentifier()
+    {
+        return problem(HttpStatus.BAD_REQUEST, "Invalid group request", "Group identifier must be a number.");
     }
 
     private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail)

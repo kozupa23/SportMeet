@@ -2,13 +2,15 @@ package cz.osu.sportmeet.group.api;
 
 import com.google.common.base.Preconditions;
 import cz.osu.sportmeet.group.api.dto.CreateGroupRequest;
+import cz.osu.sportmeet.group.api.dto.GroupDetailResponse;
 import cz.osu.sportmeet.group.api.dto.GroupResponse;
 import cz.osu.sportmeet.group.application.GroupFacade;
-import cz.osu.sportmeet.group.application.dto.CreateGroupInput;
 import cz.osu.sportmeet.group.application.dto.CreatedGroup;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,7 +21,7 @@ import java.security.Principal;
 
 /**
  * Exposes REST operations for sports groups.
- * The acting user is always taken from the authenticated session, never from the request body.
+ * The acting user is always taken from the authenticated session, never from the request.
  *
  * @author Radek Smiga
  * @since 0.1.0
@@ -54,12 +56,22 @@ public final class GroupController
     {
         Preconditions.checkNotNull(request, "request must not be null");
 
-        CreatedGroup created = groupFacade.createGroup(principal.getName(),
-                new CreateGroupInput(request.name(), request.description(), request.visibility()));
+        CreatedGroup created = groupFacade.createGroup(principal.getName(), GroupApiMapper.toInput(request));
 
-        GroupResponse response = new GroupResponse(created.id(), created.name(), created.description(),
-                created.visibility());
+        return ResponseEntity.created(URI.create("/api/v1/groups/" + created.id()))
+                .body(GroupApiMapper.toResponse(created));
+    }
 
-        return ResponseEntity.created(URI.create("/api/v1/groups/" + created.id())).body(response);
+    /**
+     * Returns a group in the scope the signed-in user may see.
+     *
+     * @param id        group identifier
+     * @param principal signed-in user
+     * @return HTTP 200 response containing the group detail
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<GroupDetailResponse> getGroup(@PathVariable Long id, Principal principal)
+    {
+        return ResponseEntity.ok(GroupApiMapper.toResponse(groupFacade.getGroup(principal.getName(), id)));
     }
 }

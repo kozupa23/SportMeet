@@ -143,6 +143,41 @@ class GroupPersistenceTest
                 CREATED_AT, founderId)).isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    /**
+     * Authorization of the group detail relies on what a "current" membership is: ACTIVE and technically valid.
+     * Verified against the database, because the repository methods are derived queries.
+     */
+    @Test
+    void currentMembershipMeansActiveAndValid()
+    {
+        Long founderId = founder("currentfounder");
+        Long activeId = founder("currentactive");
+        Long endedId = founder("currentended");
+        Long invalidId = founder("currentinvalid");
+        Long groupId = groupRepository.saveAndFlush(Group.create("Tenis", null,
+                GroupVisibility.PRIVATE, founderId, CREATED_AT)).getId();
+        membershipRepository.saveAndFlush(Membership.owner(groupId, founderId, CREATED_AT));
+        String insert = "INSERT INTO T_GROUP_MEMBERSHIP (GROUP_ID, USER_ID, ROLE, STATUS, ENDED_AT, VALID, "
+                + "CREATED_AT, CREATED_BY_OBJECT_ID, CREATED_BY_OBJECT_TYPE, VERSION) "
+                + "VALUES (?, ?, 'MEMBER', ?, ?, ?, ?, ?, 'USER', 0)";
+        jdbcTemplate.update(insert, groupId, activeId, "ACTIVE", null, true, CREATED_AT, activeId);
+        jdbcTemplate.update(insert, groupId, endedId, "ENDED", CREATED_AT.plusDays(1), true, CREATED_AT, endedId);
+        jdbcTemplate.update(insert, groupId, invalidId, "ACTIVE", null, false, CREATED_AT, invalidId);
+
+        assertThat(membershipRepository.findCurrentMembers(groupId)).extracting(Membership::getUserId)
+                .containsExactlyInAnyOrder(founderId, activeId);
+        assertThat(membershipRepository.findCurrentMembership(groupId, activeId)).isPresent();
+        assertThat(membershipRepository.findCurrentMembership(groupId, endedId)).isEmpty();
+        assertThat(membershipRepository.findCurrentMembership(groupId, invalidId)).isEmpty();
+
+        assertThat(groupRepository.findByIdAndValidTrue(groupId)).isPresent();
+        jdbcTemplate.update("UPDATE T_GROUP SET VALID = FALSE WHERE ID = ?", groupId);
+        assertThat(groupRepository.findByIdAndValidTrue(groupId)).isEmpty();
+    }
+
+    /**
+     * Persists a user that can be referenced by groups and memberships.
+     */
     private Long founder(String login)
     {
         return userRepository.saveAndFlush(User.create(login, "Founder", login + "@example.com",

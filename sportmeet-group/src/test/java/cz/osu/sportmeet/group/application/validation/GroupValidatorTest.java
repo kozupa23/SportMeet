@@ -35,23 +35,54 @@ class GroupValidatorTest
     }
 
     @Test
-    void rejectsBlankOrTooLongName()
+    void rejectsNameWithoutVisibleCharacters()
     {
-        assertThatThrownBy(() -> validator.normalizeName(""))
-                .isInstanceOf(InvalidInputException.class);
-        assertThatThrownBy(() -> validator.normalizeName("   "))
-                .isInstanceOf(InvalidInputException.class);
-        assertThatThrownBy(() -> validator.normalizeName("x".repeat(Group.NAME_MAX_LENGTH + 1)))
-                .isInstanceOf(InvalidInputException.class)
-                .hasMessage("Group name must have between 1 and 100 characters.");
+        for (String name : new String[]{"", "   ", " ", "​", " ​  "})
+        {
+            assertThatThrownBy(() -> validator.normalizeName(name))
+                    .as("name %s", name.codePoints().boxed().toList())
+                    .isInstanceOf(InvalidInputException.class)
+                    .hasMessage("Group name must not be blank.");
+        }
     }
 
     @Test
-    void descriptionIsOptionalAndBlankMeansNone()
+    void rejectsTooLongName()
+    {
+        assertThatThrownBy(() -> validator.normalizeName("x".repeat(Group.NAME_MAX_LENGTH + 1)))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Group name must have at most 100 characters.");
+    }
+
+    /**
+     * PostgreSQL cannot store NUL; without this check the insert would fail with HTTP 500.
+     */
+    @Test
+    void rejectsControlCharactersInName()
+    {
+        assertThatThrownBy(() -> validator.normalizeName("Null\u0000Byte"))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Group name must not contain control characters.");
+        assertThatThrownBy(() -> validator.normalizeName("Two\nLines"))
+                .isInstanceOf(InvalidInputException.class);
+    }
+
+    @Test
+    void descriptionIsOptionalAndInvisibleMeansNone()
     {
         assertThat(validator.normalizeDescription(null)).isNull();
         assertThat(validator.normalizeDescription("   ")).isNull();
+        assertThat(validator.normalizeDescription("​ ")).isNull();
         assertThat(validator.normalizeDescription("  Weekly training ")).isEqualTo("Weekly training");
+    }
+
+    @Test
+    void descriptionMayHaveMultipleLinesButNoOtherControlCharacters()
+    {
+        assertThat(validator.normalizeDescription("Úterý 18:00\nČtvrtek 19:00")).isEqualTo("Úterý 18:00\nČtvrtek 19:00");
+        assertThatThrownBy(() -> validator.normalizeDescription("Null\u0000Byte"))
+                .isInstanceOf(InvalidInputException.class)
+                .hasMessage("Group description must not contain control characters.");
     }
 
     @Test

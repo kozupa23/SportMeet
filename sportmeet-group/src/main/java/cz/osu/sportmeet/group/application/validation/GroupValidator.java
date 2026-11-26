@@ -2,6 +2,7 @@ package cz.osu.sportmeet.group.application.validation;
 
 import com.google.common.base.Preconditions;
 import cz.osu.sportmeet.common.application.InvalidInputException;
+import cz.osu.sportmeet.common.application.TextInput;
 import cz.osu.sportmeet.group.domain.GroupVisibility;
 import cz.osu.sportmeet.group.persistence.entity.Group;
 import org.jspecify.annotations.NullMarked;
@@ -34,25 +35,32 @@ public final class GroupValidator
      *
      * @param name submitted group name
      * @return stripped group name
-     * @throws InvalidInputException if the name is blank or too long
+     * @throws InvalidInputException if the name contains control characters, has no visible character
+     *                               or is too long
      */
     public String normalizeName(String name)
     {
         Preconditions.checkNotNull(name, "name must not be null");
 
         String normalized = name.strip();
-        InvalidInputException.check(!normalized.isEmpty() && normalized.length() <= Group.NAME_MAX_LENGTH,
-                "Group name must have between 1 and " + Group.NAME_MAX_LENGTH + " characters.");
+        InvalidInputException.check(!TextInput.containsControlCharacter(normalized, false),
+                "Group name must not contain control characters.");
+        InvalidInputException.check(TextInput.hasVisibleCharacter(normalized),
+                "Group name must not be blank.");
+        InvalidInputException.check(normalized.length() <= Group.NAME_MAX_LENGTH,
+                "Group name must have at most " + Group.NAME_MAX_LENGTH + " characters.");
 
         return normalized;
     }
 
     /**
-     * Strips and validates an optional description; a blank description is treated as no description.
+     * Strips and validates an optional multi-line description; a description without any visible
+     * character is treated as no description.
      *
      * @param description submitted description, or null
      * @return stripped description, or null if none was given
-     * @throws InvalidInputException if the description is too long
+     * @throws InvalidInputException if the description contains control characters other than line breaks
+     *                               and tabs, or is too long
      */
     public @Nullable String normalizeDescription(@Nullable String description)
     {
@@ -62,10 +70,16 @@ public final class GroupValidator
         }
 
         String normalized = description.strip();
+        InvalidInputException.check(!TextInput.containsControlCharacter(normalized, true),
+                "Group description must not contain control characters.");
+        if (!TextInput.hasVisibleCharacter(normalized))
+        {
+            return null;
+        }
         InvalidInputException.check(normalized.length() <= DESCRIPTION_MAX_LENGTH,
                 "Group description must have at most " + DESCRIPTION_MAX_LENGTH + " characters.");
 
-        return normalized.isEmpty() ? null : normalized;
+        return normalized;
     }
 
     /**

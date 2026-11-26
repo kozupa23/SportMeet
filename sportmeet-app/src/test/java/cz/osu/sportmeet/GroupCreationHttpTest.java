@@ -146,7 +146,8 @@ class GroupCreationHttpTest
     }
 
     /**
-     * AC2, AC9: invalid data is rejected with Problem Details and no group is created.
+     * AC2, AC9: invalid data (including control characters, invisible names and unknown properties)
+     * is rejected with Problem Details and no group is created.
      */
     @Test
     void invalidDataIsRejectedWithoutCreatingGroup() throws Exception
@@ -163,6 +164,12 @@ class GroupCreationHttpTest
             assertBadRequest(post(client, "{\"name\":\"Volejbal\",\"description\":\"" + "x".repeat(2001) + "\"}"));
             assertBadRequest(post(client, "{\"name\":\"Volejbal\",\"visibility\":\"SECRET\"}"));
             assertBadRequest(post(client, "{\"name\":"));
+            // NUL cannot be stored by PostgreSQL (would be HTTP 500); a zero-width space alone looks empty.
+            assertBadRequest(post(client, "{\"name\":\"Null\\u0000Byte\"}"));
+            assertBadRequest(post(client, "{\"name\":\"\\u200B\"}"));
+            // Unknown properties are rejected instead of silently ignored (a typo would otherwise create PRIVATE).
+            assertBadRequest(post(client, "{\"name\":\"Volejbal\",\"visiblity\":\"PUBLIC\"}"));
+            assertBadRequest(post(client, "{\"name\":\"Volejbal\",\"ownerId\":1}"));
 
             assertThat(groupsCreatedBy(userId)).isZero();
         }

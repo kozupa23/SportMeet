@@ -2,6 +2,7 @@ package cz.osu.sportmeet.user.application;
 
 import com.google.common.base.Preconditions;
 import cz.osu.sportmeet.user.api.lookup.UserLookupFacade;
+import cz.osu.sportmeet.user.api.lookup.UserSummary;
 import cz.osu.sportmeet.user.application.validation.UserValidator;
 import cz.osu.sportmeet.user.domain.UserState;
 import cz.osu.sportmeet.user.persistence.entity.User;
@@ -10,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -49,5 +52,23 @@ public class UserLookupFacadeImpl implements UserLookupFacade
         return userRepository.findByLogin(userValidator.normalizeLogin(login))
                 .filter(user -> user.isValid() && user.getState() == UserState.ACTIVE)
                 .map(User::getId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserSummary> findUserSummaries(Collection<Long> ids)
+    {
+        Preconditions.checkNotNull(ids, "ids must not be null");
+        if (ids.isEmpty())
+        {
+            return List.of();
+        }
+
+        return userRepository.findAllById(ids).stream()
+                .map(user -> new UserSummary(user.getId(), user.getDisplayName()))
+                .toList();
     }
 }
