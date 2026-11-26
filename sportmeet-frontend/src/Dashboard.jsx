@@ -5,7 +5,6 @@ import './Dashboard.css';
 
 export default function Dashboard() {
   const { t } = useTranslation();
-
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
   

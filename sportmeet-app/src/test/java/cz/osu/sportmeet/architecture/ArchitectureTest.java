@@ -30,4 +30,20 @@ class ArchitectureTest
                 )
                 .check(CLASSES);
     }
+
+    @Test
+    void otherModulesMustNotAccessGroupInternals()
+    {
+        noClasses()
+                .that()
+                .resideOutsideOfPackage("cz.osu.sportmeet.group..")
+                .should()
+                .dependOnClassesThat()
+                .resideInAnyPackage(
+                        "cz.osu.sportmeet.group.application..",
+                        "cz.osu.sportmeet.group.domain..",
+                        "cz.osu.sportmeet.group.persistence.."
+                )
+                .check(CLASSES);
+    }
 }

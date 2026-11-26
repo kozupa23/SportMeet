@@ -69,6 +69,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>cz.osu</groupId>
+            <artifactId>sportmeet-group</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
